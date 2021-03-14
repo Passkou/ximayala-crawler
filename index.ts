@@ -84,16 +84,23 @@ async function getAudioIdList(url: string): Promise<Audio[]> {
  * @param audio 音频信息
  * @param pathToSave 保存路径
  */
-async function downloadAudio(audio: Audio, pathToSave: string): Promise<void> {
-    const url = await getAudioURL(audio.id);
-    console.log('下载音频：', audio.name);
-    const resp = await session.get(url, {
-        responseType: 'stream'
+function downloadAudio(audio: Audio, pathToSave: string): Promise<void> {
+    let filename: string = '';
+    return getAudioURL(audio.id).then(url => {
+        console.log('下载音频：', audio.name);
+        const ext: string = path.extname(url.split('/').pop());
+        filename = audio.name + ext;
+        return session.get(url, {
+            responseType: 'stream'
+        });
+    }).then(resp => {
+        console.log('保存音频：', audio.name);
+        return new Promise((resolve) => {
+            const f = fs.createWriteStream(path.join(pathToSave, `${audio.id}-${filename}`));
+            resp.data.pipe(f);
+            f.on('finish', resolve)
+        })
     });
-    const ext: string = path.extname(url.split('/').pop());
-    console.log('保存音频：', audio.name);
-    const f = fs.createWriteStream(path.join(pathToSave, `${audio.id}-${audio.name}${ext}`));
-    resp.data.pipe(f);
 }
 
 (async () => {
@@ -111,5 +118,4 @@ async function downloadAudio(audio: Audio, pathToSave: string): Promise<void> {
     });
     await Promise.all(tasks);
     console.log('音频已保存至：', path.resolve(pathToSave));
-    process.exit(0);
 })();
