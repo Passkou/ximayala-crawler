@@ -111,4 +111,5 @@ async function downloadAudio(audio: Audio, pathToSave: string): Promise<void> {
     });
     await Promise.all(tasks);
     console.log('音频已保存至：', path.resolve(pathToSave));
+    process.exit(0);
 })();
